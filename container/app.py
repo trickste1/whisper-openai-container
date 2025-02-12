@@ -12,6 +12,24 @@ import warnings
 s3 = boto3.client("s3")
 bucket = "explainer-create-films-dev"
 
+def format_time(seconds):
+    hours = int(seconds // 3600)
+    minutes = int((seconds % 3600) // 60)
+    seconds = int(seconds % 60)
+    milliseconds = int((seconds - int(seconds)) * 1000)
+    return f"{hours:02}:{minutes:02}:{seconds:02},{milliseconds:03}"
+
+def format_srt(segments):
+    srt_output = []
+    for i, segment in enumerate(segments, start=1):
+        start_time = segment["start"]
+        end_time = segment["end"]
+        text = segment["text"]
+        srt_output.append(f"{i}\n{format_time(start_time)} --> {format_time(end_time)}\n{text}\n")
+
+    return "\n".join(srt_output)
+
+
 def handler(event, context):
     try:
         print("Received event: " + json.dumps(event, indent=2))
@@ -36,26 +54,18 @@ def handler(event, context):
         #model = whisper.load_model("medium")
         #result = model.transcribe(file_to_transcribe, fp16=False, language='English', verbose=True)
         result = model.transcribe(file_to_transcribe, fp16=False, verbose=True)
+
+        # whisper.utils.write_srt(result, "/tmp/transcription.srt")
+        srt_text = format_srt(result["segments"])
+        detected_language = result["language"]
         print(result['text'])
-        #print(s['text'].strip())
-        # object = s3.put_object(Bucket=bucket, Key=s3key+'.srt', Body=result["text"].strip())
-        # try:
-        #     # Generate a pre-signed URL for the S3 object
-        #     expiration = 3600  # URL expiration time in seconds
-        #     response = s3.generate_presigned_url(
-        #         'get_object',
-        #         Params={'Bucket': bucket, 'Key': s3key+'.text'},
-        #         ExpiresIn=expiration
-        #     )
-
-        #     output = f"Transcribed: {key}.text - {response}"
-
-        # except ClientError as e:
-        #     print(e)
 
         return {
             "statusCode": 200,
-            "body": json.dumps(result["text"].strip())
+            "body": json.dumps({
+                "srtText": srt_text,
+                "detectedLang": detected_language
+            })
         }
     except Exception as e:
         print(e)
