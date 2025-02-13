@@ -34,8 +34,11 @@ def handler(event, context):
     try:
         print("Received event: " + json.dumps(event, indent=2))
         # print(event)
+        # parsedEvent = json.loads(event)
         body = event['body']
-        s3key = body.get('s3key')
+        print("Received body: " + body)
+        parsedBody = json.loads(body)
+        s3key = parsedBody["s3key"]
         print("key:", s3key)
         os.makedirs("/tmp/data", exist_ok=True)
         os.chdir('/tmp/data')
