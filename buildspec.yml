@@ -1,0 +1,27 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 16
+
+  pre_build:
+    commands:
+      - echo "Install dependencies"
+      - aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 034757925939.dkr.ecr.eu-north-1.amazonaws.com
+
+
+  build:
+    commands:
+      - echo "Build started on `date`"
+      - echo $DOCKER_IMAGE
+      - echo $LAMBDA_FUNCTION_NAME
+      - docker build -t $DOCKER_IMAGE:latest container
+      - docker push $DOCKER_IMAGE:latest
+      - echo "Build completed on `date`"
+
+  post_build:
+    commands:
+      - echo "Post build started on `date`"
+      - aws lambda update-function-code --function-name $LAMBDA_FUNCTION_NAME --image-uri $DOCKER_IMAGE:latest
+      - echo "Post build completed on `date`"
