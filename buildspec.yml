@@ -8,6 +8,8 @@ phases:
   pre_build:
     commands:
       - echo "Install dependencies"
+      - aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 034757925939.dkr.ecr.eu-north-1.amazonaws.com
+
 
   build:
     commands:
