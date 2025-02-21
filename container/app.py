@@ -10,7 +10,7 @@ import warnings
 
 
 s3 = boto3.client("s3")
-bucket = "explainer-create-films-dev"
+bucket = "explainer-create-films-release"
 
 def format_time(seconds):
     hours = int(seconds // 3600)
