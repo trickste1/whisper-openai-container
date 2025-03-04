@@ -1,34 +1,11 @@
 import os
-import shutil
 import json
-import urllib3
-import urllib.parse
-import whisper
 import torch
 import boto3
-import warnings
-
+import stable_whisper
 
 s3 = boto3.client("s3")
-bucket = "explainer-create-films-release"
-
-def format_time(seconds):
-    hours = int(seconds // 3600)
-    minutes = int((seconds % 3600) // 60)
-    seconds = int(seconds % 60)
-    milliseconds = int((seconds - int(seconds)) * 1000)
-    return f"{hours:02}:{minutes:02}:{seconds:02},{milliseconds:03}"
-
-def format_srt(segments):
-    srt_output = []
-    for i, segment in enumerate(segments, start=1):
-        start_time = segment["start"]
-        end_time = segment["end"]
-        text = segment["text"]
-        srt_output.append(f"{i}\n{format_time(start_time)} --> {format_time(end_time)}\n{text}\n")
-
-    return "\n".join(srt_output)
-
+bucket = "explainer-create-films-dev"
 
 def handler(event, context):
     try:
@@ -52,16 +29,22 @@ def handler(event, context):
         # GPU!! (if available)
         device = "cuda" if torch.cuda.is_available() else "cpu"
         print("defined device", device)
-        model = whisper.load_model("base", download_root="/usr/local").to(device)
+        model = stable_whisper.load_model("base", download_root="/usr/local").to(device)
         print("loaded model")
         #model = whisper.load_model("medium")
         #result = model.transcribe(file_to_transcribe, fp16=False, language='English', verbose=True)
         result = model.transcribe(file_to_transcribe, fp16=False, verbose=True)
 
         # whisper.utils.write_srt(result, "/tmp/transcription.srt")
-        srt_text = format_srt(result["segments"])
-        detected_language = result["language"]
-        print(result['text'])
+        # srt_text = format_srt(result["segments"])
+        # print(result['text'])
+        detected_language = result.language
+        srt_text = result.to_srt_vtt(segment_level=True ,word_level=False)
+        print("RESULT")
+        print(srt_text)
+        print("DETECTED LANG")
+        print(result.language)
+        # print(detected_language)
 
         return {
             "statusCode": 200,
