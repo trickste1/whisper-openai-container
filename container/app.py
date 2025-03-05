@@ -3,9 +3,10 @@ import json
 import torch
 import boto3
 import stable_whisper
+import os
 
 s3 = boto3.client("s3")
-bucket = "explainer-create-films-dev"
+bucket = os.environ['S3_BUCKET_NAME']
 
 def handler(event, context):
     try:
